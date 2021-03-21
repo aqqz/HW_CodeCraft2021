@@ -30,6 +30,31 @@ bool compare(Server &s1,Server &s2)
 		return 0;
 	}
 }
+//compare server by cpucore/hwcost
+bool compare2(Server &s1,Server &s2)
+{
+	if(double(s1.core/s1.hwcost) > double(s2.core/s2.hwcost))
+	{
+		return 1;
+	}
+	else
+	{	
+		return 0;
+	}
+}
+
+//compare server by memsize/hwcost
+bool compare3(Server &s1,Server &s2)
+{
+	if(double(s1.memsize/s1.hwcost) > double(s2.memsize/s2.memsize))
+	{
+		return 1;
+	}
+	else
+	{
+		return 0;
+	}
+}
 
 void read_save_data(istream &in,vector<Server> & vec1,vector<Vm> & vec2,vector<vector<Request> > & vec3)
 {
@@ -207,16 +232,6 @@ Vm get_vm_from_request(vector<Vm> &v,Request &r)
 	return newvm;	
 }
 
-//purchase_server
-// void purchase_server(vector<Server> &ss,vector<Server> &ps,int day_id)
-// {
-// 	Server temp_server(ss[0]);
-// 	temp_server.day_id = day_id;
-// 	temp_server.id = 0;
-// 	ps.push_back(temp_server);
-// 	// cerr<<"purchase server: " + (ps.end() - 1)->mode<<" number: "<<(ps.end() - 1)->id<<endl; 
-// }
-
 //expan_server
 void expan_server(vector<Server> &ss,vector<Server> &ps,Vm &v,int day_id)
 {
@@ -234,8 +249,8 @@ void expan_server(vector<Server> &ss,vector<Server> &ps,Vm &v,int day_id)
 	}	
 	// cerr<<"purchase server: " + (ps.end() - 1)->mode<<" number: "<<(ps.end() - 1)->id<<endl; 
 }
-int add_count = 0;
-//add()
+// int add_count = 0;
+//add
 bool add(vector<Server> &ps,Vm &v,vector<Vm> &pv)
 {
 	bool add_success = false;	
@@ -277,7 +292,7 @@ bool add(vector<Server> &ps,Vm &v,vector<Vm> &pv)
 		{
 			v.server_id = ps[i].id;	 
 			pv.push_back(v);
-			add_count++;
+			// add_count++;
 			// cerr<<"add vm success"<<endl;
 			// cerr<<add_count<<" vmid: "<<v.id<<" serverid: "<<v.server_id<<endl;
 			break;
@@ -404,9 +419,7 @@ int main()
 	// clock_t start,end;
 	// start = clock();
 	// TODO:read standard input
-	char path[80] = "/home/taozhi/Desktop/competition/training-data/training-1.txt"; 
-	// char path[80] = "/home/taozhi/Desktop/competition/SDK/SDK_C++/CodeCraft-2021/1.txt";
-
+	// char path[80] = "/home/taozhi/Desktop/competition/training-data/training-1.txt"; 
 	// freopen(path,"r",stdin);
 	// freopen("/home/taozhi/Desktop/data.txt","w+",stdout);
 	vector<Server> servers;
@@ -416,7 +429,7 @@ int main()
 	read_save_data(cin,servers,vms,requests);
 	fclose(stdin);
 	 
-	sort(servers.begin(),servers.end(),compare);
+	sort(servers.begin(),servers.end(),compare2);
 	// test_print(servers,vms,requests);
 	
 	vector<Server> purchased_servers;
@@ -429,13 +442,13 @@ int main()
 		Decision dec;
 		//every_day
 		vector<Request> day_req = requests[i];
-		for(int j = 0;j<purchased_servers.size();j++)
-		{
-			if(purchased_servers[i].power_on)
-			{
-				purchased_servers[i].usetime++;
-			}	
-		}
+		// for(int j = 0;j<purchased_servers.size();j++)
+		// {
+		// 	if(purchased_servers[i].power_on)
+		// 	{
+		// 		purchased_servers[i].usetime++;
+		// 	}	
+		// }
 		for(int j = 0;j<day_req.size();j++)
 		{
 			//every_entry
@@ -481,9 +494,9 @@ int main()
 	// show_purchase(purchased_servers,purchased_vms);
 	// TODO:fflush(stdout);
 	// compute_cost(purchased_servers);
-	// cout<<total_cost<<endl;
 	// end = clock();
-	// cout<<(double)(end-start)/CLOCKS_PER_SEC;
+	// cerr<<total_cost<<endl;
+	// cerr<<(double)(end-start)/CLOCKS_PER_SEC;
 	fflush(stdout);
 	fclose(stdout);	
 	

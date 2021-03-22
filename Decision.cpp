@@ -21,7 +21,6 @@ void Decision::toString(vector<Server> &ps)
 	cout<<"(purchase, "<<this->dec.size()<<")"<<endl;
 	for(map<string,int>::iterator it = dec.begin();it!= dec.end();it++)
 	{
-//		cout<<"here"<<endl;	
 		cout<<"("<<it->first<<", "<<it->second<<")"<<endl;
 	}
 	//migration info

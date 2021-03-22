@@ -10,6 +10,7 @@
 #include "Decision.h"
 #include "time.h"
 
+// #define LOCAL_TEST 
 
 using namespace std;
 int total_cost = 0;
@@ -21,39 +22,28 @@ bool compare(Server &s1,Server &s2)
 	{
 		return 1;
 	}
-	else if(s1.hwcost == s2.hwcost&&s1.daycost < s2.daycost)
+	else if(s1.hwcost==s2.hwcost && s1.daycost < s2.daycost)
 	{
 		return 1;
 	}
-	else
-	{
-		return 0;
-	}
-}
-//compare server by cpucore/hwcost
-bool compare2(Server &s1,Server &s2)
-{
-	if(double(s1.core/s1.hwcost) > double(s2.core/s2.hwcost))
-	{
-		return 1;
-	}
+	// else if(s1.daycost==s2.daycost && s1.core+s1.memsize > s2.core+s2.memsize)
+	// {
+	// 	return 1;
+	// }
 	else
 	{	
 		return 0;
 	}
 }
 
-//compare server by memsize/hwcost
-bool compare3(Server &s1,Server &s2)
+bool compare2(Server &s1,Server &s2)
 {
-	if(double(s1.memsize/s1.hwcost) > double(s2.memsize/s2.memsize))
-	{
+	if(s1.a[0] + s1.b[0] > s2.a[0] + s2.b[0])
 		return 1;
-	}
+	else if(s1.a[0] + s1.b[0] == s2.a[0] + s2.b[0] && s1.a[1] + s1.b[1] > s2.a[1] + s2.b[1])
+		return 1;
 	else
-	{
 		return 0;
-	}
 }
 
 void read_save_data(istream &in,vector<Server> & vec1,vector<Vm> & vec2,vector<vector<Request> > & vec3)
@@ -397,8 +387,9 @@ void show_purchase(vector<Server> &ps,vector<Vm> &pv)
 {
 	for(int i = 0;i<ps.size();i++)
 	{
-		cout<<ps[i].mode<<" "<<ps[i].core<<" "<<ps[i].memsize<<" "<<ps[i].a[0]<<" "<<ps[i].a[1]<<" "<<ps[i].hwcost<<" "<<ps[i].daycost<<" "<<\
-		ps[i].id<<" "<<ps[i].id2<<" power_on: "<<ps[i].power_on<<" day_id: "<<ps[i].day_id<<endl; 
+		cout<<ps[i].mode<<" "<<ps[i].core<<" "<<ps[i].memsize<<" "<<ps[i].a[0]<<" "<<ps[i].a[1]<<" "\
+		<<ps[i].b[0]<<" "<<ps[i].b[1]<<" "<<ps[i].hwcost<<" "<<ps[i].daycost<<" "<<ps[i].id<<" "\
+		<<ps[i].id2<<" power_on: "<<ps[i].power_on<<" day_id: "<<ps[i].day_id<<endl; 
 	}
 	for(int i = 0;i<pv.size();i++)
 	{
@@ -416,12 +407,14 @@ void compute_cost(vector<Server> &ps)
 	
 int main()
 {
-	// clock_t start,end;
-	// start = clock();
+	#ifdef LOCAL_TEST
+	clock_t start,end;
+	start = clock();
 	// TODO:read standard input
-	// char path[80] = "/home/taozhi/Desktop/competition/training-data/training-1.txt"; 
-	// freopen(path,"r",stdin);
-	// freopen("/home/taozhi/Desktop/data.txt","w+",stdout);
+	char path[80] = "/home/taozhi/Desktop/competition/training-data/training-1.txt"; 
+	freopen(path,"r",stdin);
+	freopen("/home/taozhi/Desktop/data.txt","w+",stdout);
+	#endif
 	vector<Server> servers;
 	vector<Vm> vms;
 	vector<vector<Request> > requests;
@@ -429,7 +422,7 @@ int main()
 	read_save_data(cin,servers,vms,requests);
 	fclose(stdin);
 	 
-	sort(servers.begin(),servers.end(),compare2);
+	sort(servers.begin(),servers.end(),compare);
 	// test_print(servers,vms,requests);
 	
 	vector<Server> purchased_servers;
@@ -439,18 +432,13 @@ int main()
 	// TODO:process
 	for(int i = 0;i<requests.size();i++)
 	{
-		Decision dec;
 		//every_day
+		// sort(purchased_servers.begin(),purchased_servers.end(),compare2);
+		Decision dec;
 		vector<Request> day_req = requests[i];
-		// for(int j = 0;j<purchased_servers.size();j++)
-		// {
-		// 	if(purchased_servers[i].power_on)
-		// 	{
-		// 		purchased_servers[i].usetime++;
-		// 	}	
-		// }
 		for(int j = 0;j<day_req.size();j++)
 		{
+			// migration();
 			//every_entry
 			Vm operator_vm = get_vm_from_request(vms,day_req[j]);
 			operator_vm.day_id = i;
@@ -460,7 +448,6 @@ int main()
 				//get_vm_from_request
 				Vm add_vm;
 				add_vm = operator_vm;
-				// add_vm.toString();
 				//container_is_full
 				if(servers_full(purchased_servers,add_vm))
 				{
@@ -468,8 +455,7 @@ int main()
 					expan_server(servers,purchased_servers,add_vm,i);
 				}
 				add(purchased_servers,add_vm,purchased_vms);
-			}
-			
+			}		
 			//del
 			if(day_req[j].request == "del")
 			{
@@ -479,7 +465,15 @@ int main()
 				del(purchased_servers,del_vm,purchased_vms);
 			}
 		}
-			
+		#ifdef LOCAL_TEST
+		for(int j = 0;j<purchased_servers.size();j++)
+		{
+			if(purchased_servers[j].power_on)
+			{
+				purchased_servers[j].usetime++;
+			}
+		}
+		#endif	
 		dec.day_id = i;
 		decision_update(purchased_servers,purchased_vms,dec);
 		number_server(purchased_servers,dec);
@@ -491,14 +485,16 @@ int main()
 	{
 		decs[i].toString(purchased_servers);
 	}
-	// show_purchase(purchased_servers,purchased_vms);
+
+	#ifdef LOCAL_TEST
+	show_purchase(purchased_servers,purchased_vms);
 	// TODO:fflush(stdout);
-	// compute_cost(purchased_servers);
-	// end = clock();
-	// cerr<<total_cost<<endl;
-	// cerr<<(double)(end-start)/CLOCKS_PER_SEC;
+	compute_cost(purchased_servers);
+	end = clock();
+	cerr<<total_cost<<endl;
+	cerr<<(double)(end-start)/CLOCKS_PER_SEC;
+	#endif
 	fflush(stdout);
 	fclose(stdout);	
-	
 	return 0;
 }

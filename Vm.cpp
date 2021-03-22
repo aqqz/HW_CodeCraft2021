@@ -16,23 +16,13 @@ Vm::Vm(string mode,int core,int memsize,int istwonode)
 	{
 		this->node = 2;
 	}
-	this->day_id = -1;
+	this->day_id = 0;
 }
 
 Vm::Vm(std::string mode,int id)
 {
 	this->mode = mode;
-	this->id = id;	
-	
-	
-	//used for purchased_vms
-	this->server_id = -1;
-	this->node = -1;
-	if(istwonode)
-	{
-		this->node = 2;
-	}
-	this->day_id = -1;
+	this->id = id;
 } 
 
 Vm::Vm()

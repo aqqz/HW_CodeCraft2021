@@ -9,18 +9,15 @@ Server::Server(string mode,int core,int memsize,int hwcost,int daycost)
 	this->hwcost = hwcost;
 	this->daycost = daycost;
 	
-	this->power_on = false;
-	
-	
-	this->a[0] = this->b[0] = core/2;
-	this->a[1] = this->b[1] = memsize/2;
 	
 	//used for purchased_servers
+	this->a[0] = this->b[0] = core/2;
+	this->a[1] = this->b[1] = memsize/2;
+	this->power_on = false;
 	this->id = 0;
 	this->id2 = -1;
 	this->usetime = 0;
-	this->power_on = true;
-	this->day_id = 0xfffffff;	
+	this->day_id = 0;
 }
 
 Server::Server()
@@ -53,7 +50,7 @@ bool Server::isfull(Vm &add_vm)
 bool Server::isempty()
 {
 	bool isempty = false;
-	if(this->core/2 == this->a[0] == this->b[0])
+	if(this->core/2 == this->a[0] && this->core/2 == this->b[0] && this->memsize/2 == this->a[1] && this->memsize/2 == this->b[1])
 	{
 		isempty = true;	
 	} 

@@ -10,7 +10,7 @@
 #include "Decision.h"
 #include "time.h"
 
-// #define LOCAL_TEST 
+#define LOCAL_TEST 
 
 using namespace std;
 int total_cost = 0;
@@ -26,24 +26,26 @@ bool compare(Server &s1,Server &s2)
 	{
 		return 1;
 	}
-	// else if(s1.daycost==s2.daycost && s1.core+s1.memsize > s2.core+s2.memsize)
-	// {
-	// 	return 1;
-	// }
 	else
 	{	
 		return 0;
 	}
 }
 
-bool compare2(Server &s1,Server &s2)
+bool compare2(Vm &v1,Vm &v2)
 {
-	if(s1.a[0] + s1.b[0] > s2.a[0] + s2.b[0])
+	if(v1.core<v2.core)
+	{
 		return 1;
-	else if(s1.a[0] + s1.b[0] == s2.a[0] + s2.b[0] && s1.a[1] + s1.b[1] > s2.a[1] + s2.b[1])
+	}
+	else if(v1.core==v2.core && v1.memsize < v2.memsize)
+	{
 		return 1;
+	}
 	else
+	{
 		return 0;
+	}
 }
 
 void read_save_data(istream &in,vector<Server> & vec1,vector<Vm> & vec2,vector<vector<Request> > & vec3)
@@ -246,41 +248,10 @@ bool add(vector<Server> &ps,Vm &v,vector<Vm> &pv)
 	bool add_success = false;	
 	for(int i = 0;i<ps.size();i++)
 	{
-		if(v.istwonode)
-		{	
-			if(ps[i].a[0] >= v.core/2 && ps[i].a[1] >= v.memsize/2 && ps[i].b[0] >= v.core/2 && ps[i].b[1] >= v.memsize/2)
-			{
-				//add	
-				ps[i].a[0] -= v.core/2;
-				ps[i].a[1] -= v.memsize/2;
-				ps[i].b[0] -= v.core/2;
-				ps[i].b[1] -= v.memsize/2;
-				add_success = true;
-			}
-		}
-		else
-		{
-			if(ps[i].a[0] >= v.core && ps[i].a[1] >= v.memsize)
-			{
-				//add_to_A
-				ps[i].a[0] -= v.core;
-				ps[i].a[1] -= v.memsize;
-				v.node = 0;
-				add_success = true;
-				
-			}else if(ps[i].b[0] >= v.core && ps[i].b[1] >= v.memsize)
-			{
-				//add_to_B
-				ps[i].b[0] -= v.core;
-				ps[i].b[1] -= v.memsize;
-				v.node = 1;
-				add_success = true;
-			}
-		}
+		add_success = ps[i].add(v);
 		//double bind
 		if(add_success)
 		{
-			v.server_id = ps[i].id;	 
 			pv.push_back(v);
 			// add_count++;
 			// cerr<<"add vm success"<<endl;
@@ -297,44 +268,15 @@ bool del(vector<Server> &ps,Vm &v,vector<Vm> &pv)
 	bool del_success;
 	for(int i = 0;i<ps.size();i++)
 	{
-		if(v.server_id == ps[i].id)
-		{
-			// cerr<<"find it"<<endl;
-			del_success = true;
-			v.server_id = -1;
-			//del
-			if(v.node == 2)
-			{
-				//double node
-				ps[i].a[0] += v.core/2;
-				ps[i].a[1] += v.memsize/2;
-				ps[i].b[0] += v.core/2;
-				ps[i].b[1] += v.memsize/2; 
-			}
-			else if(v.node == 0)
-			{
-				//in_A
-				ps[i].a[0] += v.core;
-				ps[i].a[1] += v.memsize;
-			}
-			else
-			{
-				//in_B
-				ps[i].b[0] += v.core;
-				ps[i].b[1] += v.memsize;
-			}
-			// cerr<<"del: v_id: "<<v.id<<" v_server_id: "<<v.server_id<<endl;
-			
+		del_success = ps[i].del(v);
+		if(del_success)
+		{	
 			for(vector<Vm>::iterator it = pv.begin();it!=pv.end();it++)
 			{
 				if(it->id == v.id)
 				{
 					it = pv.erase(it);
 				}
-			}
-			if(ps[i].isempty())
-			{
-				ps[i].power_on = false;
 			}
 			break;	
 		}
@@ -390,6 +332,10 @@ void show_purchase(vector<Server> &ps,vector<Vm> &pv)
 		cout<<ps[i].mode<<" "<<ps[i].core<<" "<<ps[i].memsize<<" "<<ps[i].a[0]<<" "<<ps[i].a[1]<<" "\
 		<<ps[i].b[0]<<" "<<ps[i].b[1]<<" "<<ps[i].hwcost<<" "<<ps[i].daycost<<" "<<ps[i].id<<" "\
 		<<ps[i].id2<<" power_on: "<<ps[i].power_on<<" day_id: "<<ps[i].day_id<<endl; 
+		for(int j = 0;j<ps[i].sub_vms.size();j++)
+		{
+			cout<<ps[i].sub_vms[j].mode<<" "<<ps[i].sub_vms[j].core<<" "<<ps[i].sub_vms[j].memsize<<" "<<ps[i].sub_vms[j].id<<" "<<ps[i].sub_vms[j].day_id<<endl;
+		}
 	}
 	for(int i = 0;i<pv.size();i++)
 	{
@@ -404,6 +350,24 @@ void compute_cost(vector<Server> &ps)
 		total_cost += (ps[i].usetime * ps[i].daycost + ps[i].hwcost);
 	}
 }
+
+void miguration(vector<Server> &ps,vector<Vm> &pv)
+{
+	for(int i = 0;i<ps.size()-1;i++)
+	{
+		for(int j = 0;j<ps[i].sub_vms.size();j++)
+		{
+			if(!ps[ps.size()-1].isfull(ps[i].sub_vms[j]))
+			{
+				bool success = ps[i].miguration(ps[i].sub_vms[j],ps[ps.size() - 1]);
+				if(!success)
+				{
+					cerr<<"migurate fail"<<endl;
+				}
+			}
+		}
+	}
+}
 	
 int main()
 {
@@ -411,7 +375,8 @@ int main()
 	clock_t start,end;
 	start = clock();
 	// TODO:read standard input
-	char path[80] = "/home/taozhi/Desktop/competition/training-data/training-1.txt"; 
+	// char path[80] = "/home/taozhi/Desktop/competition/training-data/training-1.txt"; 
+	char path[80] = "/home/taozhi/SDK_C++/training-data/training-1.txt";
 	freopen(path,"r",stdin);
 	freopen("/home/taozhi/Desktop/data.txt","w+",stdout);
 	#endif
@@ -433,25 +398,23 @@ int main()
 	for(int i = 0;i<requests.size();i++)
 	{
 		//every_day
-		// sort(purchased_servers.begin(),purchased_servers.end(),compare2);
 		Decision dec;
 		vector<Request> day_req = requests[i];
+		
 		for(int j = 0;j<day_req.size();j++)
 		{
-			// migration();
 			//every_entry
+			//get_vm_from_request
 			Vm operator_vm = get_vm_from_request(vms,day_req[j]);
 			operator_vm.day_id = i;
 			//add
 			if(day_req[j].request == "add")
 			{
-				//get_vm_from_request
 				Vm add_vm;
 				add_vm = operator_vm;
 				//container_is_full
 				if(servers_full(purchased_servers,add_vm))
 				{
-					// cerr<<"container is not enough!!!"<<endl;
 					expan_server(servers,purchased_servers,add_vm,i);
 				}
 				add(purchased_servers,add_vm,purchased_vms);
@@ -459,7 +422,6 @@ int main()
 			//del
 			if(day_req[j].request == "del")
 			{
-				//get_vm_from_request
 				Vm del_vm;
 				del_vm = operator_vm;
 				del(purchased_servers,del_vm,purchased_vms);
@@ -474,6 +436,9 @@ int main()
 			}
 		}
 		#endif	
+
+		//miguration
+		// miguration(purchased_servers,purchased_vms);
 		dec.day_id = i;
 		decision_update(purchased_servers,purchased_vms,dec);
 		number_server(purchased_servers,dec);

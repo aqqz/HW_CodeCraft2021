@@ -25,11 +25,15 @@ public:
 	int id2;
 	int usetime;
 	int day_id;
-//	std::vector<Vm> sub_vms;
+	std::vector<Vm> sub_vms;
 	
 	
 	bool isfull(Vm &add_vm); //check current server can or not contain a vm
 	bool isempty();
+	void clean();
+	bool add(Vm &v);
+	bool del(Vm &v);
+	bool miguration(Vm &v,Server &des);
 
 };
 #endif
